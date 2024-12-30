@@ -84,39 +84,74 @@ pub fn create_dir_snapshot(root_folder: &Path) {
         create_dir_snapshot(&dir_entry);
     }
 }
-
-// fn resolve_path(input: &str) -> PathBuf {
-//     let path = Path::new(input);
-//     path.components().fold(PathBuf::new(), |mut acc, component| {
-//         match component {
-//             std::path::Component::Prefix(_) => acc.push(component),
-//             std::path::Component::RootDir => acc.push(component),
-//             std::path::Component::Normal(_) => acc.push(component),
-//             std::path::Component::ParentDir => {
-//                 // Remove the last component if it's not the root
-//                 if acc.pop().is_none() {
-//                     acc.push(component);
-//                 }
-//             }
-//             _ => {}
-//         }
-//         acc
-//     })
-// }
-
 pub fn print_compo_path(path: &Path) {
     println!("path --> {}", path.display());
     for component in path.components() {
-
         println!("{:?}", component);
     }
-
 }
 
+pub fn resolve_path(path: &Path) -> PathBuf {
+    let mut stack = Vec::new(); // This stack will hold the components of the resolved path
+                                // Iterate over each component of the path
+
+    println!("resolving path {:?}", path);
+
+    let mut my_root = PathBuf::new();
+    for component in path.components() {
+        match component {
+            // The current directory (`./`), we skip it
+            Component::CurDir => {
+                // No operation needed, `./` doesn't affect the path
+                my_root.push(component.as_os_str());
+            }
+
+            // The root directory (`/`), we start fresh with an empty stack
+            // Any other component, like a prefix or unknown, can be ignored (but this should not happen in most cases)
+            Component::RootDir => {
+                stack.clear(); // Reset the stack, we are starting from the root
+                my_root.push(component.as_os_str());
+            }
+            // A component that is part of the path (a directory or file)
+            Component::Normal(part) => {
+                stack.push(part.to_string_lossy().to_string());
+            }
+            // The parent directory (`..`): Pop the last component from the stack
+            Component::ParentDir => {
+                if !stack.is_empty() {
+                    stack.pop(); // Go up one directory, if possible
+                }
+            }
+
+            _ => {}
+        }
+    }
+
+    // Join the components in the stack to form the resolved path
+    let resolved_path = my_root.join(  PathBuf::from(stack.join("/")) );
+    if resolved_path.exists() {
+        if resolved_path.is_dir() {
+            println!("{} is a directory", resolved_path.display());
+        } else {
+            let data = fs::read_to_string(&resolved_path).expect("Failed to read path");
+            println!("{}", data);
+        }
+    } else {
+        println!("{} is not a directory", resolved_path.display());
+    }
+
+    println!("resolved path: {:?}", resolved_path.display());
+    resolved_path
+}
 
 pub fn folder_entity_to_set(folder_path: &Path) -> HashSet<PathBuf> {
-
-    if ! folder_path.exists() || (folder_path.is_dir() &&  fs::read_dir(folder_path).expect("Failed to read dir").count() == 0 ) {
+    if !folder_path.exists()
+        || (folder_path.is_dir()
+            && fs::read_dir(folder_path)
+                .expect("Failed to read dir")
+                .count()
+                == 0)
+    {
         return HashSet::new();
     }
 
@@ -134,8 +169,7 @@ pub fn folder_entity_to_set(folder_path: &Path) -> HashSet<PathBuf> {
         }
     }
 
-entities_set
-
+    entities_set
 }
 
 pub fn ignore_file_to_set(ignore_file_path: &Path) -> HashSet<PathBuf> {

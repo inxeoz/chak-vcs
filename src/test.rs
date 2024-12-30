@@ -43,7 +43,8 @@ pub fn test_ignore_file_to_set() {
 }
 
 pub fn test_print_compo_path() {
-    let path = Path::new("./example/test/../bro/txt.txt");
+    let path = Path::new("./example/fold2/nested_fold/../../fold1/f2.txt");
 
-    add::print_compo_path(path);
+   // add::print_compo_path(path);
+    add::resolve_path(path);
 }
