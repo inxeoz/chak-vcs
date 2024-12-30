@@ -14,17 +14,11 @@ mod test;
 
 fn main() {
 
-    let file_path = std::path::Path::new("./example/test.txt");
+   // test::test_create_dir_snapshot()
+  //  test::test_read_ignore();
+    //test::test_folder_entity_to_set()
+   // test::test_ignore_file_to_set()
 
-    let chak_folder = std::path::Path::new("./chak/");
-    init::init_vcs(chak_folder).expect("TODO: panic message");
-
-    let blob_path = std::path::Path::new("./chak/blobs");
-    let hash_str = add::create_blob(&file_path, &blob_path).expect("Failed to create blob");
-
-    println!("{}", hash_str);
-
-
-    test::test_create_dir_snapshot()
+    test::test_print_compo_path()
 
 }
