@@ -35,10 +35,9 @@ pub fn test_folder_entity_to_set () {
     add::folder_entity_to_set(folder_path);
 }
 
-pub fn test_ignore_file_to_set() {
+pub fn test_local_ignore_file_to_set() {
     let ignore_file_path =  Path::new("./example/fold2/.ignore");
-
-    let ignore = add::ignore_file_to_set(ignore_file_path);
+    let ignore = add::local_ignore_file_to_set(ignore_file_path);
     println!("{:?}", ignore);
 }
 
@@ -47,4 +46,21 @@ pub fn test_print_compo_path() {
 
    // add::print_compo_path(path);
     add::resolve_path(path);
+}
+
+
+pub fn test_parse_ignore_file() {
+    let local_ignore_path = Path::new("./example/fold2/.ignore");
+    let global_ignore_path = Path::new("./chak/chak.ignore");
+    let ignore = add::parse_ignore_file(local_ignore_path, global_ignore_path);
+
+    println!("---> \n{:?}", ignore);
+}
+
+pub fn test_global_ignore_file_to_set() {
+
+    let ignore_file_path =  Path::new("./chak/chak.ignore");
+    let ignore = add::global_ignore_file_to_set(ignore_file_path);
+    println!("{:?}", ignore);
+
 }

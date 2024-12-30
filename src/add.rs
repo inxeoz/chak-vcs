@@ -95,8 +95,6 @@ pub fn resolve_path(path: &Path) -> PathBuf {
     let mut stack = Vec::new(); // This stack will hold the components of the resolved path
                                 // Iterate over each component of the path
 
-    println!("resolving path {:?}", path);
-
     let mut my_root = PathBuf::new();
     for component in path.components() {
         match component {
@@ -128,19 +126,7 @@ pub fn resolve_path(path: &Path) -> PathBuf {
     }
 
     // Join the components in the stack to form the resolved path
-    let resolved_path = my_root.join(  PathBuf::from(stack.join("/")) );
-    if resolved_path.exists() {
-        if resolved_path.is_dir() {
-            println!("{} is a directory", resolved_path.display());
-        } else {
-            let data = fs::read_to_string(&resolved_path).expect("Failed to read path");
-            println!("{}", data);
-        }
-    } else {
-        println!("{} is not a directory", resolved_path.display());
-    }
-
-    println!("resolved path: {:?}", resolved_path.display());
+    let resolved_path = my_root.join(PathBuf::from(stack.join("/")));
     resolved_path
 }
 
@@ -151,6 +137,7 @@ pub fn folder_entity_to_set(folder_path: &Path) -> HashSet<PathBuf> {
                 .expect("Failed to read dir")
                 .count()
                 == 0)
+        || folder_path.is_file()
     {
         return HashSet::new();
     }
@@ -172,7 +159,11 @@ pub fn folder_entity_to_set(folder_path: &Path) -> HashSet<PathBuf> {
     entities_set
 }
 
-pub fn ignore_file_to_set(ignore_file_path: &Path) -> HashSet<PathBuf> {
+pub fn local_ignore_file_to_set(ignore_file_path: &Path) -> HashSet<PathBuf> {
+    if !ignore_file_path.exists() || ignore_file_path.is_dir() {
+        return HashSet::new();
+    }
+
     let mut rules = HashSet::new();
     let ignore_file_parent = ignore_file_path
         .parent()
@@ -181,88 +172,99 @@ pub fn ignore_file_to_set(ignore_file_path: &Path) -> HashSet<PathBuf> {
         for line in contents.lines() {
             let trimmed = line.trim();
             if !trimmed.is_empty() && !trimmed.starts_with('#') {
-                let combined_ignore_from_root = ignore_file_parent.join(trimmed);
-                match combined_ignore_from_root.canonicalize() {
-                    Ok(resolved_path) => {
-                        println!("Resolved path: {}", resolved_path.display());
+                let combined_ignore_from_root = resolve_path(&ignore_file_parent.join(trimmed));
 
-                        rules.insert(resolved_path);
-                    }
-                    Err(err) => {
-                        eprintln!(
-                            "Failed to canonicalize path {}: {}",
-                            combined_ignore_from_root.display(),
-                            err
-                        );
-                    }
+                rules.insert(combined_ignore_from_root);
+            }
+        }
+    }
+    rules
+}
+
+pub fn global_ignore_file_to_set(global_ignore_file_path: &Path) -> HashSet<PathBuf> {
+    if !global_ignore_file_path.exists() || global_ignore_file_path.is_dir() {
+        return HashSet::new();
+    }
+
+    let mut rules = HashSet::<PathBuf>::new();
+    if let Ok(contents) = fs::read_to_string(global_ignore_file_path) {
+        for line in contents.lines() {
+            let trimmed = line.trim();
+            if !trimmed.is_empty() && !trimmed.starts_with('#') {
+                let mut ignore_path = Path::new(trimmed);
+                if ignore_path.exists() {
+                    rules.insert(ignore_path.to_path_buf());
                 }
             }
         }
-    } else {
-        eprintln!("Failed to read file: {}", ignore_file_path.display());
     }
     rules
 }
 
 pub fn parse_ignore_file(ignore_file_path: &Path, global_ignore_path: &Path) -> HashSet<String> {
-    let mut rules = HashSet::new();
-    let ignore_file_parent = ignore_file_path
+    let mut ignore_set = HashSet::new();
+
+    let local_ignore = local_ignore_file_to_set(ignore_file_path);
+    let mut global_ignore = global_ignore_file_to_set(global_ignore_path);
+    let global_ignore_intial_size = global_ignore.len();
+
+    let local_ignore_parent = ignore_file_path
         .parent()
-        .expect("Failed to read parent dir")
-        .canonicalize()
-        .expect("Failed to canonicalize");
-    let ignore_file_compo_count = ignore_file_parent.components().count() + 1;
+        .expect("Failed to read parent dir");
+    let local_ignore_parent_compo_count = local_ignore_parent.components().count() + 1;
 
-    println!("parent --> {}", ignore_file_parent.display());
-    println!("parent coount {ignore_file_compo_count}");
+    let global_ignore_copy = global_ignore.clone();
+    let combined_ignore_file = local_ignore.union(&global_ignore_copy);
 
-    if let Ok(contents) = fs::read_to_string(ignore_file_path) {
-        for line in contents.lines() {
-            let trimmed = line.trim();
-            if !trimmed.is_empty() && !trimmed.starts_with('#') {
-                let combined_ignore_from_root = ignore_file_parent.join(trimmed);
-                match combined_ignore_from_root.canonicalize() {
-                    Ok(resolved_path) => {
-                        println!("Resolved path: {}", resolved_path.display());
+    for ignore_entity in combined_ignore_file {
+        println!(
+            "entity {} with compo count {}",
+            ignore_entity.display(),
+            ignore_entity.components().count()
+        );
+        println!(
+            "local_parent {} with compo count {}\n",
+            local_ignore_parent.display(),
+            local_ignore_parent_compo_count
+        );
 
-                        let resolved_path_compo_count = resolved_path.components().count();
-
-                        println!("RES compo count {resolved_path_compo_count}");
-
-                        if resolved_path_compo_count == ignore_file_compo_count {
-                            rules.insert(resolved_path.to_string_lossy().to_string());
-                        } else {
-                            if global_ignore_path.exists() && global_ignore_path.is_file() {
-                                let mut global_ignore_file = OpenOptions::new()
-                                    .append(true)
-                                    .open(global_ignore_path)
-                                    .expect("Failed to open global ignore file");
-
-                                // Write the string content to the file
-                                writeln!(
-                                    global_ignore_file,
-                                    "{}",
-                                    resolved_path.display().to_string()
-                                )
-                                .expect("Failed to write global ignore file");
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        eprintln!(
-                            "Failed to canonicalize path {}: {}",
-                            combined_ignore_from_root.display(),
-                            err
-                        );
-                    }
-                }
+        let is_start_with_parent = ignore_entity.starts_with(&local_ignore_parent);
+        println!("is_start_with_parent {:?}", is_start_with_parent);
+        if is_start_with_parent {
+            if local_ignore_parent_compo_count == ignore_entity.components().count() {
+                println!(
+                    "i am adding this entity {}",
+                    ignore_entity.display().to_string()
+                );
+                ignore_set.insert(ignore_entity.display().to_string());
+            } else {
+                println!(
+                    "i am adding this entity {} to global ignore ",
+                    ignore_entity.display().to_string()
+                );
+                global_ignore.insert(ignore_entity.to_path_buf());
             }
+        } else if ignore_entity.exists() {
+            global_ignore.insert(ignore_entity.to_path_buf());
         }
-    } else {
-        eprintln!("Failed to read file: {}", ignore_file_path.display());
     }
 
-    rules
+    if global_ignore_intial_size != global_ignore.len() {
+        let second_ignore = global_ignore_path
+            .parent()
+            .expect("Failed to read parent dir")
+            .join(".ignore");
+
+        fs::write(&second_ignore, "").expect("Failed to write ignore file");
+
+        let mut second_global_ignore = OpenOptions::new().append(true).open(second_ignore).unwrap();
+        // Join all elements with newlines and write to the file
+        for ignore_entry in global_ignore {
+            writeln!(second_global_ignore, "{}", ignore_entry.to_str().unwrap()).unwrap();
+        }
+    }
+
+    ignore_set
 }
 
 /// Recursively process directories with local and global ignore rules

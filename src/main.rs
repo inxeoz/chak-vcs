@@ -14,11 +14,26 @@ mod test;
 
 fn main() {
 
-   // test::test_create_dir_snapshot()
-  //  test::test_read_ignore();
-    //test::test_folder_entity_to_set()
-   // test::test_ignore_file_to_set()
+    use std::env;
 
-    test::test_print_compo_path()
+    fn main() {
+        match env::current_dir() {
+            Ok(path) => println!("Current directory: {:?}", path),
+            Err(e) => println!("Error getting current directory: {}", e),
+        }
+    }
+
+    main();
+ println!("");
+    // test::test_create_dir_snapshot()
+  //  test::test_read_ignore();
+   // test::test_folder_entity_to_set()
+   //test::test_ignore_file_to_set()
+
+   // test::test_print_compo_path()
+
+    test::test_parse_ignore_file();
+
+
 
 }
