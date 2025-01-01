@@ -1,3 +1,7 @@
 /target/
 /chak
 target/txt
+
+/target
+Cargo.toml
+\target

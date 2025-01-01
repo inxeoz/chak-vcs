@@ -104,20 +104,32 @@ impl CHAKRA {
         let ignore_file_parent = ignore_file_path
             .parent()
             .expect("Failed to read parent dir");
+
         if let Ok(contents) = fs::read_to_string(ignore_file_path) {
             for line in contents.lines() {
-                let trimmed = line.trim();
+                let mut trimmed =line.trim().to_string();
                 if !trimmed.is_empty() && !trimmed.starts_with('#') {
+
+
+                    if (  trimmed.starts_with('/') || trimmed.starts_with('\\') ) && trimmed.len() > 1 {
+                        trimmed = trimmed[1..].parse().unwrap()
+                    }
+
+
                     let combined_ignore_from_root = CHAKRA::resolve_path(&ignore_file_parent.join(trimmed), working_root_path);
+
+                    println!("{:?}", combined_ignore_from_root);
 
                     rules.insert(combined_ignore_from_root);
                 }
             }
         }
+
+
         rules
     }
 
-    pub fn global_ignore_file_to_set(global_ignore_file_path: &Path) -> HashSet<PathBuf> {
+    pub fn global_ignore_file_to_set(global_ignore_file_path: &Path, working_root_path: &Path) -> HashSet<PathBuf> {
         if !global_ignore_file_path.exists() || global_ignore_file_path.is_dir() {
             return HashSet::new();
         }
@@ -125,9 +137,14 @@ impl CHAKRA {
         let mut rules = HashSet::<PathBuf>::new();
         if let Ok(contents) = fs::read_to_string(global_ignore_file_path) {
             for line in contents.lines() {
-                let trimmed = line.trim();
+                let mut trimmed =line.trim().to_string();
                 if !trimmed.is_empty() && !trimmed.starts_with('#') {
-                    let mut ignore_path = Path::new(trimmed);
+
+                    // if (  trimmed.starts_with('/') || trimmed.starts_with('\\') ) && trimmed.len() > 1 {
+                    //     trimmed = trimmed[1..].parse().unwrap()
+                    // }
+                    let mut ignore_path = Self::resolve_path(&PathBuf::new().join(trimmed), working_root_path).canonicalize().unwrap();
+                    println!("ignore path --> {}", &ignore_path.display());
                     if ignore_path.exists() {
                         rules.insert(ignore_path.to_path_buf());
                     }
@@ -141,7 +158,7 @@ impl CHAKRA {
         let mut ignore_set = HashSet::new();
 
         let local_ignore = CHAKRA::local_ignore_file_to_set(ignore_file_path, working_root_path);
-        let mut global_ignore = CHAKRA::global_ignore_file_to_set(global_ignore_path);
+        let mut global_ignore = CHAKRA::global_ignore_file_to_set(global_ignore_path, working_root_path);
         let global_ignore_intial_size = global_ignore.len();
 
         let local_ignore_parent = ignore_file_path

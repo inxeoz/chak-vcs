@@ -14,8 +14,8 @@ mod init;
 
 mod add;
 
-use crate::add::CHAKRA;
 fn main() {
+
 
 
 }

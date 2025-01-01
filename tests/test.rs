@@ -1,34 +1,43 @@
 
-use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::path::{Path, PathBuf};
 
 #[cfg(test)]
 mod tests {
-    use std::env;
-    use super::*;
-    use std::fs::{self, File};
-    use std::io::Write;
+    use std::{env, fs};
+    use std::collections::{HashMap, HashSet};
+    use std::fs::File;
+    use std::path::{Path, PathBuf};
     use once_cell::sync::Lazy;
     use tempfile::TempDir;
     use chak_vcs::add::CHAKRA;
-    use chak_vcs::init;
+    use chak_vcs::{files, init};
 
-    static WORKING_DIR: Lazy<PathBuf> = Lazy::new(|| {
-         env::current_dir().expect("Failed to get current working directory")
-    });
+    static WORKING_DIR: Lazy<PathBuf> =
+        Lazy::new(|| env::current_dir().expect("Failed to get current working directory"));
 
     static INTERNAL_WORKING_DIR_CHAK: Lazy<PathBuf> = Lazy::new(|| {
-        env::current_dir().expect("Failed to get current working directory").join(".chak")
+        env::current_dir()
+            .expect("Failed to get current working directory")
+            .join("../../.chak")
     });
 
     #[test]
     fn test_local_ignore_file_to_set() {
-        let ignore_file_path = PathBuf::from(".gitignore");
+        let ignore_file_path = PathBuf::from("../../chak.ignore");
         let working_root_dir = &WORKING_DIR;
         let set = CHAKRA::local_ignore_file_to_set(&ignore_file_path, working_root_dir);
-        println!("hiiii --> ");
         println!("----> {:?}", set);
+    }
+
+    #[test]
+    fn test_global_ignore_file_to_set() {
+        let ignore_file_path = INTERNAL_WORKING_DIR_CHAK.join("../../chak.ignore");
+        let working_dir = &WORKING_DIR;
+        let set = CHAKRA::global_ignore_file_to_set(&ignore_file_path, working_dir);
+        println!("----> {:?}", set);
+
+        //write to file
+        let sorted_string_vec = files::sort_by_component_count(&set);
+        files::write_to_file_with_vec(&ignore_file_path, sorted_string_vec, false);
     }
 
     #[test]
