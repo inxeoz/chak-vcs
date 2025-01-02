@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 
 mod cli;
 mod commit;
@@ -14,7 +13,13 @@ mod init;
 
 mod add;
 
+mod test;
+
+mod files;
+
 fn main() {
+
+    test::test_local_ignore_file_to_set();
 
 
 

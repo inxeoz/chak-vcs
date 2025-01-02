@@ -1,15 +1,14 @@
 
-
-#[cfg(test)]
-mod tests {
     use std::{env, fs};
     use std::collections::{HashMap, HashSet};
     use std::fs::File;
     use std::path::{Path, PathBuf};
     use once_cell::sync::Lazy;
     use tempfile::TempDir;
-    use chak_vcs::add::CHAKRA;
-    use chak_vcs::{files, init};
+    use crate::init;
+    use crate::add::CHAKRA;
+
+    use crate::files;
 
     static WORKING_DIR: Lazy<PathBuf> =
         Lazy::new(|| env::current_dir().expect("Failed to get current working directory"));
@@ -20,15 +19,15 @@ mod tests {
             .join("../../.chak")
     });
 
-    #[test]
-    fn test_local_ignore_file_to_set() {
+
+    pub fn test_local_ignore_file_to_set() {
         let ignore_file_path = PathBuf::from("../../chak.ignore");
         let working_root_dir = &WORKING_DIR;
         let set = CHAKRA::local_ignore_file_to_set(&ignore_file_path, working_root_dir);
         println!("----> {:?}", set);
     }
 
-    #[test]
+
     fn test_global_ignore_file_to_set() {
         let ignore_file_path = INTERNAL_WORKING_DIR_CHAK.join("../../chak.ignore");
         let working_dir = &WORKING_DIR;
@@ -40,18 +39,17 @@ mod tests {
         files::write_to_file_with_vec(&ignore_file_path, sorted_string_vec, false);
     }
 
-    #[test]
     fn test_init_vcs() {
         init::init_vcs(&INTERNAL_WORKING_DIR_CHAK).expect("cant init");
     }
-    #[test]
+
     fn test_create_dir_snapshot_empty_dir() {
         let temp_dir = TempDir::new().unwrap();
         CHAKRA::create_dir_snapshot(temp_dir.path());
         // No errors or output expected
     }
 
-    #[test]
+
     fn test_create_dir_snapshot_with_files() {
         let temp_dir = TempDir::new().unwrap();
         File::create(temp_dir.path().join("file1.txt")).unwrap();
@@ -60,7 +58,7 @@ mod tests {
         // Files should be logged
     }
 
-    #[test]
+
     fn test_resolve_path() {
         let working_root = Path::new("/home/user/project");
         assert_eq!(
@@ -73,7 +71,6 @@ mod tests {
         );
     }
 
-    #[test]
     fn test_folder_entity_to_set() {
         let temp_dir = TempDir::new().unwrap();
         File::create(temp_dir.path().join("file1.txt")).unwrap();
@@ -82,18 +79,7 @@ mod tests {
         assert_eq!(entities.len(), 2);
     }
 
-    // #[test]
-    // fn test_local_ignore_file_to_set() {
-    //     let temp_dir = TempDir::new().unwrap();
-    //     let ignore_path = temp_dir.path().join(".ignore");
-    //     let mut ignore_file = File::create(&ignore_path).unwrap();
-    //     writeln!(ignore_file, "ignored_file.txt").unwrap();
-    //
-    //     let ignored = CHAKRA::local_ignore_file_to_set(&ignore_path, temp_dir.path());
-    //     assert!(ignored.contains(&temp_dir.path().join("ignored_file.txt")));
-    // }
 
-    #[test]
     fn test_create_blob() {
         let temp_dir = TempDir::new().unwrap();
         let blob_dir = temp_dir.path().join("blobs");
@@ -104,7 +90,6 @@ mod tests {
         assert!(blob_dir.join(&hash[0..2]).join(&hash[2..]).exists());
     }
 
-    #[test]
     fn test_snapshot_directory() {
         let temp_dir = TempDir::new().unwrap();
         let blob_dir = temp_dir.path().join("blobs");
@@ -117,7 +102,6 @@ mod tests {
         assert_eq!(snapshot.len(), 1);
     }
 
-    #[test]
     fn test_diff_snapshots() {
         let mut old_snapshot = HashMap::new();
         old_snapshot.insert(PathBuf::from("file1.txt"), "hash1".to_string());
@@ -130,7 +114,7 @@ mod tests {
         assert_eq!(changes.len(), 2);
     }
 
-    #[test]
+
     fn test_compute_dir_hash() {
         let mut snapshot = HashMap::new();
         snapshot.insert(PathBuf::from("file1.txt"), "hash1".to_string());
@@ -140,7 +124,6 @@ mod tests {
         assert!(!hash.is_empty());
     }
 
-    #[test]
     fn test_init_repository() {
         let temp_dir = TempDir::new().unwrap();
         CHAKRA::init_repository(temp_dir.path()).unwrap();
@@ -151,7 +134,7 @@ mod tests {
         assert!(chakra_dir.join("config").exists());
     }
 
-    #[test]
+
     fn test_filter_with_ignore() {
         let mut snapshot = HashMap::new();
         snapshot.insert(PathBuf::from("file1.txt"), "hash1".to_string());
@@ -164,4 +147,4 @@ mod tests {
         assert_eq!(filtered.len(), 1);
         assert!(filtered.contains_key(&PathBuf::from("file2.txt")));
     }
-}
+

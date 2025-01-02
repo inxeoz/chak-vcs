@@ -1,4 +1,5 @@
 pub mod add;
 
-pub mod init;
 pub mod files;
+pub mod init;
+pub mod test;
