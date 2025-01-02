@@ -1,0 +1,60 @@
+# Comments
+# This file ignores certain files and folders from Git
+
+# Ignore all files and folders in the "build" directory
+# Example of local ignore
+build/
+
+# Ignore all files ending with ".swp"
+# Example of local ignore
+*.swp
+
+# Ignore all files in the "temp" directory
+# Example of local ignore
+temp/
+
+
+# Ignore all files in the "node_modules" directory except "package-lock.json"
+# Example of local ignore
+node_modules/
+# Example of exception
+!node_modules/package-lock.json
+
+# Ignore all files ending with ".log" except those in the "logs" directory
+# Example of local ignore
+*.log
+# Example of exception
+!logs/*.log
+
+# Ignore files named "secret.key"
+# Example of local ignore
+secret.key
+
+# Ignore all files in the "config" directory except "config.example.js"
+# Example of local ignore
+config/
+# Example of exception
+!config/config.example.js
+
+# Ignore all files in the "tests" directory except those in the "integration" subdirectory
+# Example of local ignore
+tests/
+# Example of exception
+!tests/integration/
+
+# Ignore all files ending with ".pyc" and ".pyo"
+# Example of local ignore
+*.pyc
+*.pyo
+
+# Ignore all files in the ".vscode" directory
+# Example of local ignore
+.vscode/
+
+# Ignore all files in the ".idea" directory
+# Example of local ignore
+.idea/
+
+# Ignore all files in the ".git" directory (already ignored by Git by default)
+# Example of global ignore
+.git/
